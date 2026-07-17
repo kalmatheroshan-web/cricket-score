@@ -10,10 +10,12 @@ import MatchCard from "./components/home/MatchCard";
 import { RoleGuard } from "../guards/RoleGuard";
 import { RootState } from "../hooks/store";
 import { ReduxUser, UserRole } from "../types";
+import AdminUi from "./components/home/AdminUi";
 
 // ---------- Core Configuration Map ----------
 const FEATURE_ROLES: Record<string, (UserRole)[]> = {
-  ViewFixturesList: ["user", "admin", "scorer"],
+  // ViewFixturesList: ["user", "admin", "scorer"],
+  ViewFixturesList: ["user"],
   ViewHeaderComponentProfile: ["admin"],
   AccessSettingsModal: ["user", "admin"],
 };
@@ -30,7 +32,7 @@ export default function Index() {
   const router = useRouter();
 
   const { user } = useSelector((state: RootState) => state.auth) as { user: ReduxUser | null };
-  console.log("Current Redux User Profile:", user);
+  // console.log("Current Redux User : ", user);
 
   const isLoggedIn = !!user;
   const currentRole = user?.role;
@@ -86,15 +88,7 @@ export default function Index() {
           userRole={currentRole}
           allowedRoles={FEATURE_ROLES.ViewFixturesList}
           fallback={
-            <View className="flex-1 justify-center items-center px-6">
-              <Ionicons name="lock-closed-outline" size={48} color="#525252" />
-              <Text className="text-white text-base font-bold mt-4 mb-2 text-center">
-                Access Denied
-              </Text>
-              <Text className="text-neutral-400 text-sm text-center">
-                You do not have permission to view the matches database framework.
-              </Text>
-            </View>
+            <AdminUi/>
           }
         >
           <FlatList
@@ -115,6 +109,7 @@ export default function Index() {
               </Pressable>
             )}
 
+            // Header Component with Role-Based Access Control
             ListHeaderComponent={
               <RoleGuard userRole={currentRole} allowedRoles={FEATURE_ROLES.ViewHeaderComponentProfile}>
                 <HeaderComponent
@@ -125,6 +120,7 @@ export default function Index() {
                 />
               </RoleGuard>
             }
+
             ListFooterComponent={() => (
               <View className="mt-2 mb-6 items-center">
                 <Text className="text-neutral-600 text-xs font-medium tracking-wide">

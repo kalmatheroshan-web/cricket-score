@@ -6,6 +6,7 @@ const TeamSchema = new mongoose.Schema({
     logoUrl: { type: String }, // Optional URL to team crest/flag
     players: [{
         name: { type: String, required: true },
+        jerseyNumber: { type: Number, required: true },
         role: { type: String, enum: ['Batsman', 'Bowler', 'All-Rounder', 'Wicketkeeper'] }
     }]
 }, { timestamps: true });

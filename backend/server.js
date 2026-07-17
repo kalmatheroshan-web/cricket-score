@@ -8,6 +8,7 @@ const { Server } = require("socket.io");
 const connect = require('./config/mongo');
 const cors = require('cors');
 const userRouter = require("./routes/userRoute");
+const teamRouter = require("./routes/teamRoute");
  
 app.use(express.json());
 app.use(cors());
@@ -40,6 +41,7 @@ app.get('/', (req, res)=>{
 })
 
 app.use('/api/auth', userRouter);
+app.use('/api/teams', teamRouter);
 
 
 
