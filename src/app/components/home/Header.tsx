@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { memo } from "react";
 import { Pressable, Text, TouchableOpacity, View } from "react-native";
-import { ReduxUser } from "../../types";
+import { ReduxUser } from "../../../types";
 
 interface HeaderProps {
   isLoggedIn: boolean;
@@ -10,7 +10,7 @@ interface HeaderProps {
   onLogout: () => void;
 }
 
-export const Header = memo(({ isLoggedIn, user, onLogin, onLogout }: HeaderProps) => {
+const HeaderComponent = memo(({ isLoggedIn, user, onLogin, onLogout }: HeaderProps) => {
   const statsList = [
     { label: "Matches", value: String(user?.stats?.matchesTracked ?? 0), color: "text-white" },
     { label: "Favorites", value: String(user?.favoriteTeams?.length ?? 0), color: "text-[#f5c542]" },
@@ -76,3 +76,5 @@ export const Header = memo(({ isLoggedIn, user, onLogin, onLogout }: HeaderProps
     </View>
   );
 });
+
+export default HeaderComponent  ;

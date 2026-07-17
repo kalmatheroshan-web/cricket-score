@@ -5,8 +5,8 @@ import { Alert, FlatList, Modal, Pressable, StatusBar, Text, View } from "react-
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { useSelector } from "react-redux";
 
-import { Header } from "./components/home/Header";
-import { MatchCard } from "./components/home/MatchCard";
+import HeaderComponent from "./components/home/Header";
+import MatchCard from "./components/home/MatchCard";
 import { RoleGuard } from "../guards/RoleGuard";
 import { RootState } from "../hooks/store";
 import { ReduxUser, UserRole } from "../types";
@@ -14,7 +14,7 @@ import { ReduxUser, UserRole } from "../types";
 // ---------- Core Configuration Map ----------
 const FEATURE_ROLES: Record<string, (UserRole)[]> = {
   ViewFixturesList: ["user", "admin", "scorer"],
-  ViewHeaderProfile: ["admin"],
+  ViewHeaderComponentProfile: ["admin"],
   AccessSettingsModal: ["user", "admin"],
 };
 
@@ -38,7 +38,7 @@ export default function Index() {
   // ---------- REDIRECT UNAUTHENTICATED USERS ----------
   useEffect(() => {
     if (!user) {
-      router.replace("/");
+      router.replace("/login");
     }
   }, [user, router]);
 
@@ -86,7 +86,6 @@ export default function Index() {
           userRole={currentRole}
           allowedRoles={FEATURE_ROLES.ViewFixturesList}
           fallback={
-            // This fallback now only shows for authenticated users with insufficient permissions
             <View className="flex-1 justify-center items-center px-6">
               <Ionicons name="lock-closed-outline" size={48} color="#525252" />
               <Text className="text-white text-base font-bold mt-4 mb-2 text-center">
@@ -102,15 +101,23 @@ export default function Index() {
             data={MATCHES_DATA}
             keyExtractor={(item) => item.id.toString()}
             renderItem={({ item }) => (
-              <MatchCard
-                match={item}
-                isBookmarked={user?.bookmarkedMatches?.includes(item.id.toString()) ?? false}
-                onToggleBookmark={handleToggleBookmark}
-              />
+              <Pressable
+                onPress={() => router.push({
+                  pathname: "/components/home/MatchDetails",
+                  params: { id: item.id }
+                })}
+              >
+                <MatchCard
+                  match={item}
+                  isBookmarked={user?.bookmarkedMatches?.includes(item.id.toString()) ?? false}
+                  onToggleBookmark={handleToggleBookmark}
+                />
+              </Pressable>
             )}
+
             ListHeaderComponent={
-              <RoleGuard userRole={currentRole} allowedRoles={FEATURE_ROLES.ViewHeaderProfile}>
-                <Header
+              <RoleGuard userRole={currentRole} allowedRoles={FEATURE_ROLES.ViewHeaderComponentProfile}>
+                <HeaderComponent
                   isLoggedIn={isLoggedIn}
                   user={user}
                   onLogin={handleLogin}

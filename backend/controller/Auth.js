@@ -58,7 +58,6 @@ async function login(req, res) {
 async function sing_up(req, res) {
     try {
         const { username, password, email } = req.body;
-        console.log(req.body);
 
         // 1. Check if user already exists
         const existingUser = await UserModel.findOne({ $or: [{ username }, { email }] });

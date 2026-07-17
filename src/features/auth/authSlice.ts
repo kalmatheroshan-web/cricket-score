@@ -10,12 +10,10 @@ const authSlice = createSlice({
   initialState,
   reducers: {
     signupSuccess(state, action) {
-      console.log(action.payload.user)
       state.user = action.payload.user;
       state.isLoggedIn = true;
     },
     loginSuccess(state, action) {
-      console.log(action.payload.user)
       state.user = action.payload.user;
       state.isLoggedIn = true;
     },

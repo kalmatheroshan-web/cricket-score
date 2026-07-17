@@ -1,15 +1,14 @@
 import { Ionicons } from "@expo/vector-icons";
 import { memo } from "react";
 import { Pressable, Text, View } from "react-native";
-import { Match } from "../../types";
+import { Match } from "../../../types";
 
 interface MatchCardProps {
     match: Match;
     isBookmarked: boolean;
     onToggleBookmark: (id: number) => void;
 }
-
-export const MatchCard = memo(({ match, isBookmarked, onToggleBookmark }: MatchCardProps) => {
+const MatchCard = memo(({ match, isBookmarked, onToggleBookmark }: MatchCardProps) => {
     const statusConfig = {
         Live: { text: "LIVE", bg: "bg-red-500/20", textColor: "text-red-400", dotColor: "bg-red-500" },
         Upcoming: { text: "UPCOMING", bg: "bg-blue-500/20", textColor: "text-blue-400", dotColor: "bg-blue-500" },
@@ -68,3 +67,6 @@ export const MatchCard = memo(({ match, isBookmarked, onToggleBookmark }: MatchC
         </View>
     );
 });
+
+
+export default MatchCard; 
