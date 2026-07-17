@@ -5,8 +5,8 @@ import { Alert, FlatList, Modal, Pressable, StatusBar, Text, View } from "react-
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { useSelector } from "react-redux";
 
-import { Header } from "../components/home/Header";
-import { MatchCard } from "../components/home/MatchCard";
+import { Header } from "./components/home/Header";
+import { MatchCard } from "./components/home/MatchCard";
 import { RoleGuard } from "../guards/RoleGuard";
 import { RootState } from "../hooks/store";
 import { ReduxUser, UserRole } from "../types";
@@ -38,12 +38,12 @@ export default function Index() {
   // ---------- REDIRECT UNAUTHENTICATED USERS ----------
   useEffect(() => {
     if (!user) {
-      router.replace("/components/login");
+      router.replace("/");
     }
   }, [user, router]);
 
   const handleLogin = useCallback(() => {
-    requestAnimationFrame(() => router.push("/components/login"));
+    requestAnimationFrame(() => router.push("/login"));
   }, [router]);
 
   const handleLogout = useCallback(() => {

@@ -13,7 +13,7 @@ import {
 } from "react-native";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { useDispatch } from "react-redux";
-import { login, signup } from "../lib/api/auth";
+import { login, signup } from "../../lib/api/auth";
 
 type AuthMode = "login" | "signup";
 
