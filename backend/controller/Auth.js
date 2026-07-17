@@ -43,11 +43,7 @@ async function login(req, res) {
         res.cookie("token", token, cookieOptions).status(200).send({
             success: true,
             message: "Login successful",
-            user: {
-                id: user._id,
-                username: user.username,
-                email: user.email
-            }
+            user
         });
 
     } catch (err) {
