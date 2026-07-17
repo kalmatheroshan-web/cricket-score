@@ -1,18 +1,14 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router';
-import * as SplashScreen from 'expo-splash-screen';
-import { useColorScheme } from 'react-native';
+import { Stack } from "expo-router";
+import Toast from "react-native-toast-message";
+import { toastConfig } from "@/lib/toastconfig";
+import { Provider } from "react-redux";
+import { store } from "../hooks/store";
+import "./global.css";
 
-import { AnimatedSplashOverlay } from '@/components/animated-icon';
-import AppTabs from '@/components/app-tabs';
-
-SplashScreen.preventAutoHideAsync();
-
-export default function TabLayout() {
-  const colorScheme = useColorScheme();
-  return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <AnimatedSplashOverlay />
-      <AppTabs />
-    </ThemeProvider>
+export default function Layout() {
+  return (<Provider store={store}>
+    <Stack screenOptions={{ headerShown: false }} />
+    <Toast config={toastConfig} />
+  </Provider>
   );
 }

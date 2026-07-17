@@ -24,6 +24,7 @@
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
+      "react-native-edge-to-edge",
       "expo-router",
       [
         "expo-splash-screen",
