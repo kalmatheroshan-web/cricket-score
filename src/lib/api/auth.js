@@ -5,16 +5,7 @@ import { loginSuccess, signupSuccess } from "@/features/auth/authSlice";
 
 const { LOGIN, LOGOUT, SIGNUP } = AUTH;
 
-// HTTP Request Methods
-const methods = {
-    get: "GET",
-    post: "POST",
-    put: "PUT",
-    patch: "PATCH",
-    delete: "DELETE",
-    head: "HEAD",
-    options: "OPTIONS",
-};
+import { methods } from "./apis";
 
 // User Authentication Actions
 export const login = (data) => async (dispatch) => {

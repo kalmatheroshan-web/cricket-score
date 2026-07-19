@@ -33,8 +33,8 @@ async function addTeam(req, res) {
 
         const newTeam = new Team({
             teamName,
-            players: roster || [], // Expecting array matching our frontend structure
-            stats: { matchesPlayed: 0, matchesWon: 0, matchesLost: 0 } // Initialize empty state
+            players: roster || [], 
+            stats: { matchesPlayed: 0, matchesWon: 0, matchesLost: 0 }
         });
 
         await newTeam.save();
@@ -59,6 +59,17 @@ async function deleteTeam(req, res) {
 
         return res.status(200).json({ success: true, message: 'Team and related profile deleted successfully.' });
     } catch (error) {
+        return res.status(500).json({ success: false, message: error.message });
+    }
+}
+
+
+async function getTeams(req, res) {
+    try {
+        const teams = await Team.find().select('teamName players stats');
+        return res.status(200).json({ success: true, data: teams });
+    }
+    catch (error) {
         return res.status(500).json({ success: false, message: error.message });
     }
 }
@@ -202,5 +213,6 @@ module.exports = {
     updateTeamPlayer,
     deleteTeamPlayer,
     getTeamStats,
-    updateTeamStats
+    updateTeamStats,
+    getTeams
 };

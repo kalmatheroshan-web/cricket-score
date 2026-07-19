@@ -2,8 +2,7 @@ import Toast from "react-native-toast-message";
 
 export const apiconnector = async (url, method, body = null, headers = {}) => {
     try {
-        console.log("URL:", url);
-
+        // console.log("URL:", url);
         const uppercaseMethod = method.toUpperCase();
 
         const config = {
@@ -24,16 +23,12 @@ export const apiconnector = async (url, method, body = null, headers = {}) => {
         // Parse the response only once
         const data = await response.json();
 
-        console.log("Response:", data, typeof data);
-
-
         if (!response.ok || data.success === false) {
             Toast.show({
                 type: "error",
                 text1: "Login Failed",
                 text2: data.message || "Something went wrong",
             });
-            console.log("hello roshan");
             return null;
         }
 

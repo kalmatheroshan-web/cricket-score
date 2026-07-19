@@ -11,7 +11,6 @@ const MatchSchema = new mongoose.Schema({
   dateTime: { type: Date, required: true }, // Schedule time
   venue: { type: String, required: true },
   
-  // Scorer Assignment (Security: Only this user ID can modify scores)
   assignedScorer: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
 
   // Live Scoring Data

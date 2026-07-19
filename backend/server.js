@@ -9,6 +9,7 @@ const connect = require('./config/mongo');
 const cors = require('cors');
 const userRouter = require("./routes/userRoute");
 const teamRouter = require("./routes/teamRoute");
+const matchRouter = require("./routes/matchRoute");
  
 app.use(express.json());
 app.use(cors());
@@ -42,6 +43,7 @@ app.get('/', (req, res)=>{
 
 app.use('/api/auth', userRouter);
 app.use('/api/teams', teamRouter);
+app.use('/api/matches', matchRouter);
 
 
 

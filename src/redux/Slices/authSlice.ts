@@ -1,4 +1,5 @@
-import { createSlice } from "@reduxjs/toolkit";
+export const { loginSuccess, logout, signupSuccess } = authSlice.actions;
+export default authSlice.reducer;import { createSlice } from "@reduxjs/toolkit";
 
 const initialState = {
   user: null,
@@ -24,6 +25,3 @@ const authSlice = createSlice({
     },
   },
 });
-
-export const { loginSuccess, logout, signupSuccess } = authSlice.actions;
-export default authSlice.reducer;
