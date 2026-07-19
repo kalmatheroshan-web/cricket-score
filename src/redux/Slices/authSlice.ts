@@ -1,6 +1,3 @@
-export const { loginSuccess, logout, signupSuccess } = authSlice.actions;
-export default authSlice.reducer;import { createSlice } from "@reduxjs/toolkit";
-
 const initialState = {
   user: null,
   isLoggedIn: false,
@@ -25,3 +22,6 @@ const authSlice = createSlice({
     },
   },
 });
+
+export const { loginSuccess, logout, signupSuccess } = authSlice.actions;
+export default authSlice.reducer; import { createSlice } from "@reduxjs/toolkit";
