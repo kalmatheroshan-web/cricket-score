@@ -1,7 +1,7 @@
 import Toast from "react-native-toast-message";
 import { apiconnector } from "../apiconnector";
 import { AUTH } from "./apis";
-import { loginSuccess, signupSuccess } from "@/features/auth/authSlice";
+import { loginSuccess, signupSuccess } from "../../redux/Slices/authSlice";
 
 const { LOGIN, LOGOUT, SIGNUP } = AUTH;
 
@@ -17,6 +17,7 @@ export const login = (data) => async (dispatch) => {
                 text1: response?.message,
             });
             dispatch(loginSuccess({ user: response.user }));
+            router.replace('/src/app/components/admin/adminui.tsx')
         }
         return response;
     } catch (error) {
@@ -33,6 +34,7 @@ export const signup = (data) => async (dispatch) => {
                 type: "success",
                 text1: response?.message,
             });
+
             dispatch(signupSuccess({ user: response.user }));
         }
         return response;

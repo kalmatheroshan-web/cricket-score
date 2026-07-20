@@ -1,9 +1,10 @@
 import { View } from "react-native"
+import Login from "./(auth)/login"
 
 function index() {
     return (
-        <View>
-
+        <View className="flex w-full h-full">
+            <Login/>
         </View>
     )
 }

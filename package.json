@@ -27,6 +27,7 @@
     "prettier-plugin-tailwindcss": "^0.5.11",
     "react": "19.2.3",
     "react-dom": "19.2.3",
+    "react-hook-form": "^7.82.0",
     "react-native": "0.86.0",
     "react-native-edge-to-edge": "^1.8.1",
     "react-native-gesture-handler": "~2.32.0",
