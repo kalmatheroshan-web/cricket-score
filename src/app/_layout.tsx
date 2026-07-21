@@ -6,9 +6,10 @@ import { store } from "../redux/store";
 import "./global.css";
 
 export default function Layout() {
-  return (<Provider store={store}>
-    <Stack screenOptions={{ headerShown: false }} />
-    <Toast config={toastConfig} />
-  </Provider>
+  return (
+    <Provider store={store}>
+      <Stack screenOptions={{ headerShown: false }} />
+      <Toast config={toastConfig} />
+    </Provider>
   );
 }

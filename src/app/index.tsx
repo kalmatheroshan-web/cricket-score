@@ -1,12 +1,12 @@
 import { View } from "react-native"
-import Login from "./(auth)/login"
+import Auth from "./(auth)/login"
 
-function index() {
+function Index() {
     return (
-        <View className="flex w-full h-full">
-            <Login/>
+        <View className="flex-1 w-full h-full bg-white">
+            <Auth />
         </View>
     )
 }
 
-export default index
+export default Index

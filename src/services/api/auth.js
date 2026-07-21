@@ -1,11 +1,10 @@
 import Toast from "react-native-toast-message";
 import { apiconnector } from "../apiconnector";
-import { AUTH } from "./apis";
-import { loginSuccess, signupSuccess } from "../../redux/Slices/authSlice";
+import { AUTH, methods } from "./apis";
+// 1. Added logoutSuccess to clear the user state from Redux
+import { loginSuccess, signupSuccess, logoutSuccess } from "../../redux/Slices/authSlice";
 
 const { LOGIN, LOGOUT, SIGNUP } = AUTH;
-
-import { methods } from "./apis";
 
 // User Authentication Actions
 export const login = (data) => async (dispatch) => {
@@ -14,10 +13,9 @@ export const login = (data) => async (dispatch) => {
         if (response?.message) {
             Toast.show({
                 type: "success",
-                text1: response?.message,
+                text1: response.message,
             });
             dispatch(loginSuccess({ user: response.user }));
-            router.replace('/src/app/components/admin/adminui.tsx')
         }
         return response;
     } catch (error) {
@@ -32,9 +30,8 @@ export const signup = (data) => async (dispatch) => {
         if (response?.message) {
             Toast.show({
                 type: "success",
-                text1: response?.message,
+                text1: response.message,
             });
-
             dispatch(signupSuccess({ user: response.user }));
         }
         return response;
@@ -47,7 +44,13 @@ export const signup = (data) => async (dispatch) => {
 export const logout = () => async (dispatch) => {
     try {
         const response = await apiconnector(LOGOUT, methods.post);
-        dispatch(logout());
+        // 2. FIXED: Dispatched the slice action instead of the thunk to avoid infinite loops
+        dispatch(logoutSuccess());
+
+        Toast.show({
+            type: "success",
+            text1: "Logged out successfully",
+        });
         return response;
     } catch (error) {
         console.error("Logout Error:", error);

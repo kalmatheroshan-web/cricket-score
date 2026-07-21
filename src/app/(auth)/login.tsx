@@ -1,290 +1,293 @@
+import { useState, useEffect } from "react";
 import { GoogleIcon } from "@/icons/GoogleIcons";
-import {
-    View,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    KeyboardAvoidingView,
-    Platform,
-    Alert,
-    ScrollView,
-} from "react-native";
+import { Pressable, Text, TextInput, View, KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useForm, Controller } from "react-hook-form";
-import { useState } from "react";
-import { LinearGradient } from "expo-linear-gradient";
-import { Feather } from "@expo/vector-icons";
-import { useDispatch } from "react-redux";
 import { login, signup } from "../../services/api/auth";
+import * as z from "zod";
+import { useDispatch } from "react-redux";
 import { useRouter } from "expo-router";
+import { Eye, EyeClosed } from "lucide-react-native";
 
-type FormData = {
-    email: string;
-    password: string;
-    confirmPassword: string;
-    username: string;
-}
+const zodResolver = <T extends z.ZodTypeAny>(schema: T) => async (values: unknown) => {
+    const result = schema.safeParse(values);
+
+    if (result.success) {
+        return { values: result.data, errors: {} };
+    }
+
+    const fieldErrors = result.error.flatten().fieldErrors;
+    const errors = Object.keys(fieldErrors).reduce((acc, key) => {
+        const messages = fieldErrors[key as keyof typeof fieldErrors];
+        if (messages?.length) {
+            acc[key] = {
+                type: "validation",
+                message: messages[0],
+            };
+        }
+        return acc;
+    }, {} as Record<string, { type: string; message: string }>);
+
+    return { values: {}, errors };
+};
+
+type AuthMode = "login" | "signup";
+
+// Form schemas defined using Zod
+const authSchema = z.object({
+    username: z.string().optional(),
+    email: z.string().min(1, "Email is required").email("Invalid email address"),
+    password: z.string().min(6, "Password must be at least 6 characters"),
+}).superRefine((data, ctx) => {
+    // Custom check: Require username if signing up
+    if (!data.username && ctx.path.includes("username")) {
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "Username is required for registration",
+        });
+    }
+});
+
+type AuthFormData = z.infer<typeof authSchema>;
+
 
 function Auth() {
-    const [isLogin, setIsLogin] = useState(true);
-    const [showPassword, setShowPassword] = useState(false);
-    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-    const [focusedField, setFocusedField] = useState<string | null>(null);
+    const [showeye, setEye] = useState(false);
+    const [mode, setMode] = useState<AuthMode>("login");
+    const [isLoading, setIsLoading] = useState(false);
 
-    const {
-        control,
-        handleSubmit,
-        formState: { errors, isSubmitting },
-        reset,
-        watch,
-    } = useForm<FormData>({
-        defaultValues: { email: "", password: "", confirmPassword: "" },
+    const { control, handleSubmit, reset, formState: { errors } } = useForm<AuthFormData>({
+        resolver: zodResolver(authSchema),
+        defaultValues: {
+            username: "",
+            email: "",
+            password: "",
+        }
     });
+
+    // Clear validation states and input text when switching between modes
+    useEffect(() => {
+        reset({
+            username: "",
+            email: "",
+            password: "",
+        });
+    }, [mode, reset]);
+
     const dispatch = useDispatch();
     const router = useRouter();
+    const handleForm = async (data: AuthFormData) => {
+        setIsLoading(true);
+        try {
+            if (mode === "login") {
+                console.log("Attempting Login with:", { email: data.email, password: data.password });
+                await login({ email: data.email, password: data.password })(dispatch);
 
-    const passwordValue = watch("password");
-
-    const onSubmit = async (data: FormData) => {
-        if (isLogin)
-            login({ email: data.email, password: data.password })(dispatch);
-        else
-            signup(data)(dispatch);
-        router.replace("/components/admin/adminui");
-        reset();
+            } else {
+                console.log("Attempting Signup with:", data);
+                await signup(data)(dispatch);
+            }
+            router.replace('/components/admin/adminui')
+        } catch (error) {
+            console.error("Auth process encountered an error:", error);
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     return (
-        <View className="flex-1 bg-black">
-            <LinearGradient
-                colors={["#1e1b4b", "transparent"]}
-                className="absolute top-[-20%] self-center w-[120%] h-[50%] opacity-40 rounded-full blur-[140px]"
-            />
-
+        <View className="flex-1 bg-zinc-50">
             <SafeAreaView className="flex-1">
                 <KeyboardAvoidingView
                     behavior={Platform.OS === "ios" ? "padding" : "height"}
                     className="flex-1"
                 >
                     <ScrollView
-                        contentContainerStyle={{ flexGrow: 1, justifyContent: "space-between" }}
-                        className="px-8 pt-12 pb-6"
-                        keyboardShouldPersistTaps="handled"
+                        contentContainerClassName="px-6 justify-center flex-grow py-6"
                         showsVerticalScrollIndicator={false}
                     >
-                        {/* Header Block */}
-                        <View className="mt-8">
-                            <Text className="text-zinc-600 text-[11px] font-black tracking-[0.3em] uppercase mb-2">
-                                {isLogin ? "System Access" : "Create Passport"}
+                        {/* Brand & Header Section */}
+                        <View className="mb-8 items-start mt-4">
+                            <View className="flex-row items-center space-x-2 mb-6">
+                                <Text className="text-4xl">🏏</Text>
+                                <View className="flex-row items-baseline">
+                                    <Text className="text-3xl font-black text-orange-600 tracking-tight">Cric</Text>
+                                    <Text className="text-3xl font-black text-zinc-900 tracking-tight">Show</Text>
+                                    <View className="h-1.5 w-1.5 rounded-full bg-orange-500 ml-0.5" />
+                                </View>
+                            </View>
+
+                            {/* Segmented Switcher */}
+                            <View className="flex-row bg-zinc-200/50 p-1 rounded-2xl w-48 mb-8 border border-zinc-200/20">
+                                <Pressable
+                                    onPress={() => setMode("login")}
+                                    className={`flex-1 py-2 rounded-xl items-center justify-center ${mode === "login" ? "bg-white" : ""}`}
+                                >
+                                    <Text className={`text-sm font-semibold tracking-tight ${mode === "login" ? "text-zinc-900" : "text-zinc-400"}`}>
+                                        Sign In
+                                    </Text>
+                                </Pressable>
+                                <Pressable
+                                    onPress={() => setMode("signup")}
+                                    className={`flex-1 py-2 rounded-xl items-center justify-center ${mode === "signup" ? "bg-white" : ""}`}
+                                >
+                                    <Text className={`text-sm font-semibold tracking-tight ${mode === "signup" ? "text-zinc-900" : "text-zinc-400"}`}>
+                                        Join
+                                    </Text>
+                                </Pressable>
+                            </View>
+
+                            <Text className="text-2xl font-bold tracking-tight text-zinc-900">
+                                {mode === "login" ? "Welcome back" : "Get your stadium pass"}
                             </Text>
-                            <Text className="text-4xl font-extrabold tracking-tight text-zinc-100">
-                                Cric<Text className="text-amber-500">.</Text>
-                            </Text>
-                            <Text className="text-zinc-500 text-sm mt-2 font-medium tracking-wide">
-                                {isLogin ? "Sign in to your private workspace." : "Join the premium sports ecosystem."}
+                            <Text className="text-sm text-zinc-400 mt-1 font-normal">
+                                {mode === "login" ? "Live Scores • Every Match • Every Moment" : "Create a premium account to track your teams."}
                             </Text>
                         </View>
 
-                        {/* Interactive Form fields */}
-                        <View className="flex justify-center gap-3 my-10 space-y-4">
-                            {
-                                !isLogin && (
-                                    <View>
-                                        <Controller
-                                            control={control}
-                                            name="username"
-                                            rules={{
-                                                required: "Identity required",
-                                                pattern: {
-                                                    value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                                                    message: "Invalid format",
-                                                },
-                                            }}
-                                            render={({ field: { onChange, onBlur, value } }) => (
-                                                <View className={`flex-row items-center rounded-2xl px-4 h-14 border ${focusedField === "username"
-                                                    ? "bg-zinc-900 border-zinc-500"
-                                                    : "bg-zinc-900/40 border-zinc-800/60"
-                                                    }`}>
-                                                    <Feather name="user" size={16} color={focusedField === "username" ? "#f59e0b" : "#52525b"} />
-                                                    <TextInput
-                                                        className="flex-1 h-full ml-3.5 text-zinc-200 text-sm font-medium tracking-wide"
-                                                        placeholder="John Bias"
-                                                        placeholderTextColor="#3f3f46"
-                                                        onBlur={() => { onBlur(); setFocusedField(null); }}
-                                                        onFocus={() => setFocusedField("username")}
-                                                        onChangeText={onChange}
-                                                        value={value}
-                                                        autoCapitalize="none"
-                                                    />
-                                                </View>
-                                            )}
-                                        />
-                                        {errors.email && (
-                                            <Text className="text-amber-500/90 text-[11px] mt-1.5 ml-2 tracking-wide font-medium">
-                                                {errors.email.message}
-                                            </Text>
+                        {/* Custom Monolithic Card Structure containing Controller Wrapped Inputs */}
+                        <View className="bg-white rounded-3xl border border-zinc-200/70 overflow-hidden mb-5">
+                            {mode === "signup" && (
+                                <View className="border-b border-zinc-100 p-4 bg-zinc-50/5">
+                                    <Text className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-1">Username</Text>
+                                    <Controller
+                                        control={control}
+                                        name="username"
+                                        render={({ field: { onChange, onBlur, value } }) => (
+                                            <TextInput
+                                                placeholder="username"
+                                                placeholderTextColor="#a1a1aa"
+                                                autoCapitalize="none"
+                                                onBlur={onBlur}
+                                                onChangeText={onChange}
+                                                value={value}
+                                                className="text-zinc-900 text-base p-0 font-medium tracking-wide h-6"
+                                            />
                                         )}
-                                    </View>
-                                )
-                            }
-                            {/* Email Input Field */}
-                            <View>
+                                    />
+                                    {errors.username && <Text className="text-red-500 text-xs mt-1">{errors.username.message}</Text>}
+                                </View>
+                            )}
+
+                            <View className="border-b border-zinc-100 p-4 bg-zinc-50/5">
+                                <Text className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-1">Email address</Text>
                                 <Controller
                                     control={control}
                                     name="email"
-                                    rules={{
-                                        required: "Identity required",
-                                        pattern: {
-                                            value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                                            message: "Invalid format",
-                                        },
-                                    }}
                                     render={({ field: { onChange, onBlur, value } }) => (
-                                        <View className={`flex-row items-center rounded-2xl px-4 h-14 border ${focusedField === "email"
-                                            ? "bg-zinc-900 border-zinc-500"
-                                            : "bg-zinc-900/40 border-zinc-800/60"
-                                            }`}>
-                                            <Feather name="mail" size={16} color={focusedField === "email" ? "#f59e0b" : "#52525b"} />
-                                            <TextInput
-                                                className="flex-1 h-full ml-3.5 text-zinc-200 text-sm font-medium tracking-wide"
-                                                placeholder="Email address"
-                                                placeholderTextColor="#3f3f46"
-                                                onBlur={() => { onBlur(); setFocusedField(null); }}
-                                                onFocus={() => setFocusedField("email")}
-                                                onChangeText={onChange}
-                                                value={value}
-                                                autoCapitalize="none"
-                                                keyboardType="email-address"
-                                            />
-                                        </View>
+                                        <TextInput
+                                            placeholder="name@example.com"
+                                            placeholderTextColor="#a1a1aa"
+                                            keyboardType="email-address"
+                                            autoCapitalize="none"
+                                            onBlur={onBlur}
+                                            onChangeText={onChange}
+                                            value={value}
+                                            className="text-zinc-900 text-base p-0 font-medium tracking-wide h-6"
+                                        />
                                     )}
                                 />
-                                {errors.email && (
-                                    <Text className="text-amber-500/90 text-[11px] mt-1.5 ml-2 tracking-wide font-medium">
-                                        {errors.email.message}
-                                    </Text>
-                                )}
+                                {errors.email && <Text className="text-red-500 text-xs mt-1">{errors.email.message}</Text>}
                             </View>
+                            <View className="p-4 bg-zinc-50/5">
+                                <Text className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-1">
+                                    Password
+                                </Text>
 
-                            {/* Password Input Field */}
-                            <View>
-                                <Controller
-                                    control={control}
-                                    name="password"
-                                    rules={{
-                                        required: "Security keys required",
-                                        minLength: { value: 6, message: "Security threshold is 6 units" },
-                                    }}
-                                    render={({ field: { onChange, onBlur, value } }) => (
-                                        <View className={`flex-row items-center rounded-2xl px-4 h-14 border ${focusedField === "password"
-                                            ? "bg-zinc-900 border-zinc-500"
-                                            : "bg-zinc-900/40 border-zinc-800/60"
-                                            }`}>
-                                            <Feather name="lock" size={16} color={focusedField === "password" ? "#f59e0b" : "#52525b"} />
+                                <View className="flex-row items-center justify-between">
+                                    <Controller
+                                        control={control}
+                                        name="password"
+                                        render={({ field: { onChange, onBlur, value } }) => (
                                             <TextInput
-                                                className="flex-1 h-full ml-3.5 text-zinc-200 text-sm font-medium tracking-wide"
-                                                placeholder="Password"
-                                                placeholderTextColor="#3f3f46"
-                                                secureTextEntry={!showPassword}
-                                                onBlur={() => { onBlur(); setFocusedField(null); }}
-                                                onFocus={() => setFocusedField("password")}
+                                                placeholder="••••••••"
+                                                placeholderTextColor="#a1a1aa"
+                                                secureTextEntry={!showeye}
+                                                onBlur={onBlur}
                                                 onChangeText={onChange}
                                                 value={value}
-                                                autoCapitalize="none"
+                                                className="flex-1 text-zinc-900 text-base p-0 font-medium tracking-wide h-6"
                                             />
-                                            <TouchableOpacity onPress={() => setShowPassword(!showPassword)} hitSlop={12} activeOpacity={0.7}>
-                                                <Feather name={showPassword ? "eye-off" : "eye"} size={16} color="#52525b" />
-                                            </TouchableOpacity>
-                                        </View>
-                                    )}
-                                />
+                                        )}
+                                    />
+
+                                    <TouchableOpacity
+                                        onPress={() => setEye((prev) => !prev)}
+                                        activeOpacity={0.7}
+                                        className="p-1"
+                                    >
+                                        {showeye ? (
+                                            <Eye color="#a1a1aa" size={20} />
+                                        ) : (
+                                            <EyeClosed color="#a1a1aa" size={20} />
+                                        )}
+                                    </TouchableOpacity>
+                                </View>
+
                                 {errors.password && (
-                                    <Text className="text-amber-500/90 text-[11px] mt-1.5 ml-2 tracking-wide font-medium">
+                                    <Text className="text-red-500 text-xs mt-1">
                                         {errors.password.message}
                                     </Text>
                                 )}
                             </View>
+                        </View>
 
-                            {/* Confirm Password (Only when Registration active) */}
-                            {!isLogin && (
-                                <View>
-                                    <Controller
-                                        control={control}
-                                        name="confirmPassword"
-                                        rules={{
-                                            required: "Password matching verification required",
-                                            validate: (value) => value === passwordValue || "Signature match failure",
-                                        }}
-                                        render={({ field: { onChange, onBlur, value } }) => (
-                                            <View className={`flex-row items-center rounded-2xl px-4 h-14 border ${focusedField === "confirmPassword"
-                                                ? "bg-zinc-900 border-zinc-500"
-                                                : "bg-zinc-900/40 border-zinc-800/60"
-                                                }`}>
-                                                <Feather name="shield" size={16} color={focusedField === "confirmPassword" ? "#f59e0b" : "#52525b"} />
-                                                <TextInput
-                                                    className="flex-1 h-full ml-3.5 text-zinc-200 text-sm font-medium tracking-wide"
-                                                    placeholder="Confirm signature"
-                                                    placeholderTextColor="#3f3f46"
-                                                    secureTextEntry={!showConfirmPassword}
-                                                    onBlur={() => { onBlur(); setFocusedField(null); }}
-                                                    onFocus={() => setFocusedField("confirmPassword")}
-                                                    onChangeText={onChange}
-                                                    value={value}
-                                                    autoCapitalize="none"
-                                                />
-                                                <TouchableOpacity onPress={() => setShowConfirmPassword(!showConfirmPassword)} hitSlop={12} activeOpacity={0.7}>
-                                                    <Feather name={showConfirmPassword ? "eye-off" : "eye"} size={16} color="#52525b" />
-                                                </TouchableOpacity>
-                                            </View>
-                                        )}
-                                    />
-                                    {errors.confirmPassword && (
-                                        <Text className="text-amber-500/90 text-[11px] mt-1.5 ml-2 tracking-wide font-medium">
-                                            {errors.confirmPassword.message}
-                                        </Text>
-                                    )}
-                                </View>
+                        {/* Forgot Password Link */}
+                        {mode === "login" && (
+                            <Pressable className="self-end mb-6 mr-1">
+                                <Text className="text-xs font-semibold text-zinc-400 active:text-zinc-900">
+                                    Forgot password?
+                                </Text>
+                            </Pressable>
+                        )}
+
+                        {/* Primary Action Button */}
+                        <Pressable
+                            onPress={handleSubmit(handleForm)}
+                            disabled={isLoading}
+                            className={`bg-zinc-900 h-14 rounded-2xl items-center justify-center mb-5 ${isLoading ? "opacity-70" : "active:opacity-90"}`}
+                            android_ripple={{ color: "#3f3f46" }}
+                        >
+                            {isLoading ? (
+                                <ActivityIndicator color="#ffffff" />
+                            ) : (
+                                <Text className="text-white font-semibold text-sm tracking-wide">
+                                    {mode === "login" ? "Continue" : "Create Account"}
+                                </Text>
                             )}
+                        </Pressable>
 
-                            {/* Main CTA Primary Action */}
-                            <TouchableOpacity
-                                className="rounded-2xl bg-zinc-100 h-14 items-center justify-center mt-6 active:opacity-90"
-                                onPress={handleSubmit(onSubmit)}
-                                disabled={isSubmitting}
-                                activeOpacity={0.85}
-                            >
-                                <Text className="text-black font-bold text-sm tracking-wide">
-                                    {isSubmitting ? "Verifying..." : isLogin ? "Continue" : "Register Node"}
-                                </Text>
-                            </TouchableOpacity>
-
-                            {/* View Toggle Strategy */}
-                            <TouchableOpacity className="py-2 mt-2" onPress={() => { setIsLogin(!isLogin); reset(); }} activeOpacity={0.7}>
-                                <Text className="text-center text-xs text-zinc-500 font-medium tracking-wide">
-                                    {isLogin ? "Need a dynamic workspace profile? " : "Existing profile? "}
-                                    <Text className="text-zinc-300 font-semibold underline">{isLogin ? "Create account" : "Login"}</Text>
-                                </Text>
-                            </TouchableOpacity>
+                        {/* Architectural Divider */}
+                        <View className="flex-row items-center mb-5">
+                            <View className="flex-1 h-[0.5px] bg-zinc-200" />
+                            <Text className="text-[10px] font-bold text-zinc-300 mx-4 uppercase tracking-widest">or</Text>
+                            <View className="flex-1 h-[0.5px] bg-zinc-200" />
                         </View>
 
-                        {/* Social Single Sign On Layer */}
-                        <View className="mb-4">
-                            <TouchableOpacity
-                                className="flex-row items-center border border-orange-400/50 justify-center bg-transparent rounded-2xl h-14 active:bg-zinc-900/40"
-                                activeOpacity={0.8}
-                            >
-                                <GoogleIcon width={16} height={16} />
-                                <Text className="text-zinc-300 font-semibold text-md tracking-wide ml-3">
-                                    Google
-                                </Text>
-                            </TouchableOpacity>
+                        {/* Premium Google Option */}
+                        <Pressable
+                            className="bg-white rounded-2xl px-5 py-4 flex-row items-center border border-zinc-200 active:bg-zinc-50"
+                            android_ripple={{ color: "#f4f4f5" }}
+                        >
+                            <View className="w-9 h-9 rounded-xl bg-zinc-50 border border-zinc-100 items-center justify-center">
+                                <GoogleIcon width={18} height={18} />
+                            </View>
 
-                            {/* Structural Fine Legal terms */}
-                            <Text className="text-zinc-600 text-center text-[10px] mt-8 leading-relaxed font-medium tracking-wide">
-                                Protected by encryption layers. By entering, you agree with our{"\n"}
-                                <Text className="text-zinc-500 underline">Terms of Architecture</Text> & <Text className="text-zinc-500 underline">Privacy Systems</Text>
-                            </Text>
-                        </View>
+                            <View className="ml-4 flex-1">
+                                <Text className="text-sm font-semibold text-zinc-900 tracking-tight">
+                                    {mode === "login" ? "Sign in with Google" : "Sign up with Google"}
+                                </Text>
+                                <Text className="text-[11px] text-zinc-400 mt-0.5">
+                                    Secure one-click instant access
+                                </Text>
+                            </View>
+                        </Pressable>
+
+                        {/* Tail Disclaimers */}
+                        <Text className="text-center text-[11px] text-zinc-400 mt-8 leading-relaxed px-4">
+                            By continuing, you accept our premium terms. {"\n"}
+                            <Text className="underline font-medium text-zinc-500">Terms of Use</Text> & <Text className="underline font-medium text-zinc-500">Privacy Policy</Text>.
+                        </Text>
                     </ScrollView>
                 </KeyboardAvoidingView>
             </SafeAreaView>
