@@ -1,4 +1,4 @@
-import { Text, View, Platform } from "react-native";
+import { Text, View } from "react-native";
 import { BaseToast } from "react-native-toast-message";
 
 const renderLeadingIcon = (icon, bgColor) => (

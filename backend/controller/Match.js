@@ -6,6 +6,7 @@ const Match = require('../dbs/match');
 async function createMatch(req, res) {
     try {
         const { team1, team2, dateTime, venue, assignedScorer } = req.body;
+        console.log(req.body);
 
         if (!team1 || !team2 || !dateTime || !venue) {
             return res.status(400).json({ success: false, message: 'Missing required fixture fields.' });

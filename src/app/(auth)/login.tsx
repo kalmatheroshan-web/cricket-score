@@ -55,6 +55,7 @@ function Auth() {
     const [showeye, setEye] = useState(false);
     const [mode, setMode] = useState<AuthMode>("login");
     const [isLoading, setIsLoading] = useState(false);
+    const router = useRouter();
 
     const { control, handleSubmit, reset, formState: { errors } } = useForm<AuthFormData>({
         resolver: zodResolver(authSchema),
@@ -65,7 +66,6 @@ function Auth() {
         }
     });
 
-    // Clear validation states and input text when switching between modes
     useEffect(() => {
         reset({
             username: "",
@@ -75,8 +75,8 @@ function Auth() {
     }, [mode, reset]);
 
     const dispatch = useDispatch();
-    const router = useRouter();
-    const handleForm = async (data: AuthFormData) => {
+
+    const handleForm = async (data: any) => {
         setIsLoading(true);
         try {
             if (mode === "login") {
@@ -87,7 +87,7 @@ function Auth() {
                 console.log("Attempting Signup with:", data);
                 await signup(data)(dispatch);
             }
-            router.replace('/components/admin/adminui')
+            router.replace('/admin/adminui')
         } catch (error) {
             console.error("Auth process encountered an error:", error);
         } finally {
