@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "node server.js"
   },
+  "type": "commonjs",
   "keywords": [],
   "author": "",
   "license": "ISC",

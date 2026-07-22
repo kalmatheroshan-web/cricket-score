@@ -132,7 +132,7 @@ function Auth() {
                                     className={`flex-1 py-2 rounded-xl items-center justify-center ${mode === "signup" ? "bg-white" : ""}`}
                                 >
                                     <Text className={`text-sm font-semibold tracking-tight ${mode === "signup" ? "text-zinc-900" : "text-zinc-400"}`}>
-                                        Join
+                                        SignUp
                                     </Text>
                                 </Pressable>
                             </View>

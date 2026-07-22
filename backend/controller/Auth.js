@@ -1,6 +1,7 @@
 const UserModel = require("../dbs/user");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const User = require("../dbs/user");
 
 async function login(req, res) {
     try {
@@ -116,4 +117,22 @@ async function logout(req, res) {
     }
 }
 
-module.exports = { login, sing_up, logout };
+async function getScorer(req, res) {
+    try {
+        const scorers = await User.find({ role: 'scorer' }).select(['username','state', 'role', 'venue']);
+
+        return res.status(200).json({
+            success: true,
+            count: scorers.length,
+            scorers
+        });
+    } catch (error) {
+        console.error("Error fetching scorers:", error);
+        return res.status(500).json({
+            success: false,
+            message: "Server error while fetching scorers"
+        });
+    }
+}
+
+module.exports = { login, sing_up, logout, getScorer };

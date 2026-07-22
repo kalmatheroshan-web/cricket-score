@@ -4,6 +4,7 @@ export const AUTH = {
     LOGIN: `${BASE_URL}/auth/login`,
     SIGNUP: `${BASE_URL}/auth/signup`,
     LOGOUT: `${BASE_URL}/auth/logout`,
+    GET_SCORER: `${BASE_URL}/auth/scorer`
 }
 export const TEAMS = {
     GET_TEAMS: `${BASE_URL}/teams`,
@@ -20,7 +21,7 @@ export const TEAMS = {
 export const MATCHES = {
     LAUNCH_MATCHES: `${BASE_URL}/matches/launch`,
     CREATE_MATCH: `${BASE_URL}/matches`,
-    UPDATE_MATCH: `${BASE_URL}/matches/score`,        
+    UPDATE_MATCH: `${BASE_URL}/matches/score`,
     GET_MATCHES: `${BASE_URL}/matches`,
     COMPLETE_MATCH: `${BASE_URL}/matches/:id/complete`,
 };

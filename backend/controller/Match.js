@@ -1,4 +1,5 @@
 const Match = require('../dbs/match');
+const User = require('../dbs/user');
 
 /**
  * 1. CREATE MATCH FIXTURE (Upcoming Match)
@@ -152,7 +153,122 @@ async function completeMatch(req, res) {
     }
 }
 
+// @desc    Add a new venue to a user's profile
+// @route   POST /api/users/:userId/venues
+async function createVenue(req, res) {
+    try {
+        const { userId } = req.params;
+        const { venue } = req.body;
+
+        if (!venue) {
+            return res.status(400).json({ success: false, message: "Venue name is required" });
+        }
+
+        // $addToSet prevents adding duplicate venue names
+        const updatedUser = await User.findByIdAndUpdate(
+            userId,
+            { $addToSet: { venue: venue } },
+            { new: true, runValidators: true }
+        ).select("-password");
+
+        if (!updatedUser) {
+            return res.status(404).json({ success: false, message: "User not found" });
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: "Venue added successfully",
+            data: updatedUser.venue,
+        });
+    } catch (error) {
+        console.error("Error creating venue:", error);
+        return res.status(500).json({ success: false, message: "Server error", error: error.message });
+    }
+}
+
+// @desc    Remove a venue from a user's profile
+// @route   DELETE /api/users/:userId/venues
+async function deleteVenue(req, res) {
+    try {
+        const { userId } = req.params;
+        const { venue } = req.body;
+
+        if (!venue) {
+            return res.status(400).json({ success: false, message: "Venue name is required" });
+        }
+
+        // $pull removes the specified venue string from the array
+        const updatedUser = await User.findByIdAndUpdate(
+            userId,
+            { $pull: { venue: venue } },
+            { new: true }
+        ).select("-password");
+
+        if (!updatedUser) {
+            return res.status(404).json({ success: false, message: "User not found" });
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: "Venue removed successfully",
+            data: updatedUser.venue,
+        });
+    } catch (error) {
+        console.error("Error deleting venue:", error);
+        return res.status(500).json({ success: false, message: "Server error", error: error.message });
+    }
+}
+
+// @desc    Update/Rename an existing venue entry or replace the entire list
+// @route   PUT /api/users/:userId/venues
+async function updateVenue(req, res) {
+    try {
+        const { userId } = req.params;
+        const { oldVenue, newVenue, venues } = req.body;
+
+        let updatedUser;
+
+        // Option A: If an array of 'venues' is provided, replace the entire venue list
+        if (Array.isArray(venues)) {
+            updatedUser = await User.findByIdAndUpdate(
+                userId,
+                { $set: { venue: venues } },
+                { new: true, runValidators: true }
+            ).select("-password");
+        }
+        // Option B: Rename a specific venue (replaces oldVenue with newVenue)
+        else if (oldVenue && newVenue) {
+            updatedUser = await User.findOneAndUpdate(
+                { _id: userId, venue: oldVenue },
+                { $set: { "venue.$": newVenue } },
+                { new: true, runValidators: true }
+            ).select("-password");
+        } else {
+            return res.status(400).json({
+                success: false,
+                message: "Provide either 'oldVenue' & 'newVenue' to rename, or a 'venues' array to overwrite.",
+            });
+        }
+
+        if (!updatedUser) {
+            return res.status(404).json({ success: false, message: "User or venue not found" });
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: "Venue updated successfully",
+            data: updatedUser.venue,
+        });
+    } catch (error) {
+        console.error("Error updating venue:", error);
+        return res.status(500).json({ success: false, message: "Server error", error: error.message });
+    }
+}
+
 module.exports = {
+    createVenue,
+    deleteVenue,
+    updateVenue,
     createMatch,
     launchMatch,
     updateLiveScore,

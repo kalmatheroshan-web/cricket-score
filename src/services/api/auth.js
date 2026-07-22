@@ -4,7 +4,7 @@ import { AUTH, methods } from "./apis";
 // 1. Added logoutSuccess to clear the user state from Redux
 import { loginSuccess, signupSuccess, logoutSuccess } from "../../redux/Slices/authSlice";
 
-const { LOGIN, LOGOUT, SIGNUP } = AUTH;
+const { LOGIN, LOGOUT, SIGNUP, GET_SCORER } = AUTH;
 
 // User Authentication Actions
 export const login = (data) => async (dispatch) => {
@@ -44,7 +44,6 @@ export const signup = (data) => async (dispatch) => {
 export const logout = () => async (dispatch) => {
     try {
         const response = await apiconnector(LOGOUT, methods.post);
-        // 2. FIXED: Dispatched the slice action instead of the thunk to avoid infinite loops
         dispatch(logoutSuccess());
 
         Toast.show({
@@ -57,3 +56,13 @@ export const logout = () => async (dispatch) => {
         throw error;
     }
 };
+
+export const getScorer = async () => {
+    try {
+        const response = await apiconnector(GET_SCORER, methods.get);
+        return response;
+    } catch (error) {
+        console.log('Scorer error');
+        throw error;
+    }
+}

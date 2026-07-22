@@ -14,6 +14,7 @@ const TeamSchema = new mongoose.Schema({
         matchesWon: { type: Number, default: 0 },
         matchesLost: { type: Number, default: 0 },
     },
+    // team owner rcb may be srk
     author: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true }
 }, { timestamps: true });
 

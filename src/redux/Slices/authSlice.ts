@@ -16,12 +16,12 @@ const authSlice = createSlice({
       state.isLoggedIn = true;
     },
 
-    logout(state) {
+    logoutSuccess(state) {
       state.user = null;
-      state.isLoggedIn = false;
+      state.isLoggedIn = false;  
     },
   },
 });
 
-export const { loginSuccess, logout, signupSuccess } = authSlice.actions;
+export const { loginSuccess, signupSuccess, logoutSuccess } = authSlice.actions;
 export default authSlice.reducer; import { createSlice } from "@reduxjs/toolkit";
