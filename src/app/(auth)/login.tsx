@@ -80,11 +80,11 @@ function Auth() {
         setIsLoading(true);
         try {
             if (mode === "login") {
-                console.log("Attempting Login with:", { email: data.email, password: data.password });
+                console.log("Login", { email: data.email, password: data.password });
                 await login({ email: data.email, password: data.password })(dispatch);
 
             } else {
-                console.log("Attempting Signup with:", data);
+                console.log("Signup", data);
                 await signup(data)(dispatch);
             }
             router.replace('/admin/adminui')

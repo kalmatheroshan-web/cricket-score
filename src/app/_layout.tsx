@@ -7,6 +7,13 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import "./global.css";
+import { configureReanimatedLogger, ReanimatedLogLevel } from 'react-native-reanimated';
+
+// Disable the strict mode logger warning
+configureReanimatedLogger({
+  level: ReanimatedLogLevel.warn,
+  strict: false, // Turn off strict checks
+});
 
 export default function RootLayout() {
   return (

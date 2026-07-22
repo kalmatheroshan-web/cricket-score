@@ -2,6 +2,7 @@ const UserModel = require("../dbs/user");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const User = require("../dbs/user");
+const Team = require("../dbs/teams");
 
 async function login(req, res) {
     try {
@@ -119,12 +120,20 @@ async function logout(req, res) {
 
 async function getScorer(req, res) {
     try {
-        const scorers = await User.find({ role: 'scorer' }).select(['username','state', 'role', 'venue']);
+        const scorers = await User.find({ role: { $in: ['scorer', 'admin'] } })
+            .select(['username', 'venues', 'state', 'role']);
+
+        const teams = await Team.find().select('teamName shortName');
+
+        let val = scorers.find(ele => ele.role == 'admin');
+        val = (val?.venues);
 
         return res.status(200).json({
             success: true,
             count: scorers.length,
-            scorers
+            scorers,
+            teams,
+            venues: val
         });
     } catch (error) {
         console.error("Error fetching scorers:", error);

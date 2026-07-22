@@ -1,3 +1,5 @@
+import Toast from "react-native-toast-message";
+
 const BASE_URL = process.env.EXPO_PUBLIC_BASE_URL;
 
 export const AUTH = {
@@ -36,16 +38,17 @@ export const methods = {
     options: "OPTIONS",
 };
 
-export const showToast = (type, text1, text2) => {
-    Toast.show({
-        type: type,
-        text1: text1,
-        text2: text2,
-        position: 'top center',
-        visibilityTime: 3000,
-        autoHide: true,
-        topOffset: 30,
-    });
-}
+export const showToast = (type = 'success', text1 = '', text2 = '') => {
+  const validTypes = ['success', 'error', 'info'];
+  const toastType = validTypes.includes(type) ? type : 'success';
 
-
+  Toast.show({
+    type: toastType,
+    text1: text1 || (validTypes.includes(type) ? '' : type), 
+    text2: text2,
+    position: 'top',
+    visibilityTime: 3000,
+    autoHide: true,
+    topOffset: 30,
+  });
+};
