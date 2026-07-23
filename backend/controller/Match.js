@@ -118,7 +118,7 @@ async function getMatches(req, res) {
             .populate('team1 team2')
             .sort({ dateTime: -1 });
 
-        res.status(200).json({ success: true, data: matches });
+        res.status(200).json({ success: true, matches });
     } catch (error) {
         console.error("Error retrieving matches:", error);
         res.status(500).json({ success: false, message: 'Error fetching matches', error: error.message });
@@ -149,6 +149,35 @@ async function completeMatch(req, res) {
     } catch (error) {
         console.error("Error completing match:", error);
         res.status(500).json({ success: false, message: 'Error closing match instance', error: error.message });
+    }
+}
+
+async function getScorerMatch(req, res) {
+    try {
+        const { id } = req.body;
+
+        if (!id) {
+            return res.status(400).json({
+                success: false,
+                message: "Scorer ID is required",
+            });
+        }
+
+        const matches = await Match.find({ assignedScorer: id });
+
+        return res.status(200).json({
+            success: true,
+            matches,
+        });
+
+    } catch (error) {
+        console.error("Error fetching matches:", error);
+
+        return res.status(500).json({
+            success: false,
+            message: "Internal server error while fetching matches",
+            error: error.message,
+        });
     }
 }
 

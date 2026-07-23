@@ -31,8 +31,8 @@ import {
   ChevronRight,
   Search,
 } from "lucide-react-native";
-import { createMatch } from "../../services/api/match";
-import { getScorer } from "../../services/api/auth";
+import { createMatch } from "../services/api/match";
+import { getScorer } from "../services/api/auth";
 
 interface MatchFormData {
   team1: string;
