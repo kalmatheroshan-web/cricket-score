@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   View,
   Text,
@@ -7,11 +7,9 @@ import {
   Alert,
   Modal,
   FlatList,
-  ActivityIndicator,
-  Platform,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useRouter, useLocalSearchParams } from "expo-router";
+import { useRouter } from "expo-router";
 import {
   ArrowLeft,
   Wifi,
@@ -27,7 +25,6 @@ import {
 } from "lucide-react-native";
 import { io, Socket } from "socket.io-client";
 import { showToast } from "../services/api/apis";
-import { getScorer } from "../services/api/auth";
 
 const SOCKET_URL = process.env.EXPO_PUBLIC_SOCKET_URL;
 
@@ -48,68 +45,112 @@ interface Player {
   role?: string;
 }
 
-export default function Scorer() {
+// Helper to extract runs, wickets, overs from a score object
+const parseScore = (scoreObj: any) => {
+  if (!scoreObj) return { runs: 0, wickets: 0, overs: 0, balls: 0 };
+  const runs = scoreObj.runs ?? 0;
+  const wickets = scoreObj.wickets ?? 0;
+  const overs = scoreObj.overs ?? 0; // could be decimal, e.g., 16.2
+  const whole = Math.floor(overs);
+  const decimal = Math.round((overs % 1) * 10) || 0; // balls (0-5)
+  return { runs, wickets, overs: whole, balls: decimal };
+};
+
+export default function Scorer({ match }: { match: any }) {
   const router = useRouter();
-  const { matchId = "demo_match_1" } = useLocalSearchParams<{ matchId: string }>();
+
+  if (!match) {
+    Alert.alert("Error", "No match data provided.");
+    router.back();
+    return null;
+  }
+
+  const matchId = match._id;
+
+  // Determine batting and bowling teams based on score.battingTeam / bowlingTeam
+  const battingTeamId = match.score?.battingTeam;
+  const bowlingTeamId = match.score?.bowlingTeam;
+
+  // Find the actual team objects (assuming they are populated)
+  const team1 = match.team1;
+  const team2 = match.team2;
+
+  // Determine which team is batting and which is bowling
+  let battingTeam = null;
+  let bowlingTeam = null;
+  if (battingTeamId && team1 && team2) {
+    if (team1._id === battingTeamId) {
+      battingTeam = team1;
+      bowlingTeam = team2;
+    } else if (team2._id === battingTeamId) {
+      battingTeam = team2;
+      bowlingTeam = team1;
+    }
+  }
+  // Fallback: if not determined, assume team1 bats, team2 bowls
+  if (!battingTeam) {
+    battingTeam = team1;
+    bowlingTeam = team2;
+  }
+
+  // Extract players
+  const battingPlayers = battingTeam?.players || [];
+  const bowlingPlayers = bowlingTeam?.players || [];
+
+  // Build player lists for selection modal (with proper mapping)
+  const buildPlayerList = (players: any[]) =>
+    players.map((p: any) => ({
+      id: p._id || p.id,
+      name: p.name || p.playerName || "Unnamed",
+      role: p.role || p.roleName || "",
+    }));
+
+  const battingPlayerOptions = buildPlayerList(battingPlayers);
+  const bowlingPlayerOptions = buildPlayerList(bowlingPlayers);
 
   const [socket, setSocket] = useState<Socket | null>(null);
   const [isConnected, setIsConnected] = useState<boolean>(false);
 
-  // Match State
+  // Initialize match state from match.score
+  const initialScore = match.score || {};
+  const currentInnings = initialScore.currentInnings || 1;
+  const inningsKey = currentInnings === 1 ? "team1Score" : "team2Score";
+  const scoreData = initialScore[inningsKey] || {};
+  const { runs, wickets, overs, balls } = parseScore(scoreData);
+
   const [matchState, setMatchState] = useState<MatchState>({
-    runs: 0,
-    wickets: 0,
-    overs: 0,
-    balls: 0,
-    currentInnings: 1,
+    runs,
+    wickets,
+    overs,
+    balls,
+    currentInnings,
     currentStriker: "Select Striker",
     currentNonStriker: "Select Non-Striker",
     currentBowler: "Select Bowler",
   });
 
   const [recentBalls, setRecentBalls] = useState<string[]>([]);
-
-  // Player Selection Modal State
-  const [playersList, setPlayersList] = useState<Player[]>([]);
-  const [loadingPlayers, setLoadingPlayers] = useState<boolean>(false);
   const [playerModal, setPlayerModal] = useState<{
     visible: boolean;
     type: "striker" | "nonStriker" | "bowler" | null;
   }>({ visible: false, type: null });
 
-  // Fetch Team Players from API
-  const fetchTeamPlayers = async () => {
-    setLoadingPlayers(true);
-    try {
-      const response = await getScorer();
-      if (response?.data && Array.isArray(response.data)) {
-        setPlayersList(response.data);
-      } else {
-        // Fallback demo roster
-        setPlayersList([
-          { id: "1", name: "Rohit Sharma", role: "Batsman" },
-          { id: "2", name: "Shubman Gill", role: "Batsman" },
-          { id: "3", name: "Virat Kohli", role: "Batsman" },
-          { id: "4", name: "KL Rahul", role: "Wicketkeeper" },
-          { id: "5", name: "Hardik Pandya", role: "All-rounder" },
-          { id: "6", name: "Jasprit Bumrah", role: "Bowler" },
-          { id: "7", name: "Mohammed Siraj", role: "Bowler" },
-        ]);
-      }
-    } catch (error) {
-      console.error("Failed to load players:", error);
-      showToast("error", "Could not fetch roster");
-    } finally {
-      setLoadingPlayers(false);
+  // Get the appropriate player list based on modal type
+  const getPlayerListForModal = () => {
+    if (!playerModal.type) return [];
+    if (playerModal.type === "striker" || playerModal.type === "nonStriker") {
+      return battingPlayerOptions;
     }
+    if (playerModal.type === "bowler") {
+      return bowlingPlayerOptions;
+    }
+    return [];
   };
-
-  useEffect(() => {
-    fetchTeamPlayers();
-  }, []);
 
   // Socket Connection Setup
   useEffect(() => {
+    if (!matchId) return;
+
     const socketInstance = io(SOCKET_URL, {
       transports: ["websocket"],
       autoConnect: true,
@@ -118,8 +159,6 @@ export default function Scorer() {
     socketInstance.on("connect", () => {
       setIsConnected(true);
       showToast("success", "Connected to Live Scoring Server");
-
-      // Join the room for this specific match
       socketInstance.emit("join_match", matchId);
     });
 
@@ -128,7 +167,6 @@ export default function Scorer() {
       showToast("error", "Disconnected from Server");
     });
 
-    // Listen for incoming score updates from server
     socketInstance.on("score_update", (data: Partial<MatchState> & { ballOutcome?: string }) => {
       if (data) {
         setMatchState((prev) => ({
@@ -183,11 +221,25 @@ export default function Scorer() {
 
   // Swap Strike
   const swapStrike = () => {
-    setMatchState((prev) => ({
-      ...prev,
-      currentStriker: prev.currentNonStriker,
-      currentNonStriker: prev.currentStriker,
-    }));
+    setMatchState((prev) => {
+      const updated = {
+        ...prev,
+        currentStriker: prev.currentNonStriker,
+        currentNonStriker: prev.currentStriker,
+      };
+      emitMatchState(updated, "SWAP");
+      return updated;
+    });
+  };
+
+  // Helper: add a ball outcome, handle over completion and recent balls reset
+  const addBallOutcome = (outcome: string, overCompleted: boolean) => {
+    // Add the new outcome to recent balls (for current over)
+    setRecentBalls((prev) => [outcome, ...prev.slice(0, 5)]);
+    // If over just completed, clear the recent balls (start fresh next over)
+    if (overCompleted) {
+      setRecentBalls([]);
+    }
   };
 
   // Score Handlers
@@ -195,11 +247,12 @@ export default function Scorer() {
     setMatchState((prev) => {
       let nextBalls = prev.balls + 1;
       let nextOvers = prev.overs;
+      let overCompleted = false;
 
-      const overCompleted = nextBalls >= 6;
-      if (overCompleted) {
+      if (nextBalls >= 6) {
         nextOvers += 1;
         nextBalls = 0;
+        overCompleted = true;
       }
 
       // Rotate strike on odd runs or when an over completes
@@ -216,10 +269,16 @@ export default function Scorer() {
       };
 
       emitMatchState(updated, String(runValue));
+      // Update recent balls after state update (but we need to know overCompleted)
+      // We'll call addBallOutcome outside the setState because we have overCompleted here.
+      // Actually we cannot call it inside setState because it's a state update itself.
+      // We'll schedule it after the state update.
+      setTimeout(() => {
+        addBallOutcome(String(runValue), overCompleted);
+      }, 0);
+
       return updated;
     });
-
-    setRecentBalls((prev) => [String(runValue), ...prev.slice(0, 5)]);
   };
 
   const handleWicket = () => {
@@ -231,10 +290,12 @@ export default function Scorer() {
     setMatchState((prev) => {
       let nextBalls = prev.balls + 1;
       let nextOvers = prev.overs;
+      let overCompleted = false;
 
       if (nextBalls >= 6) {
         nextOvers += 1;
         nextBalls = 0;
+        overCompleted = true;
       }
 
       const updated: MatchState = {
@@ -242,14 +303,17 @@ export default function Scorer() {
         wickets: prev.wickets + 1,
         balls: nextBalls,
         overs: nextOvers,
-        currentStriker: "Select New Striker",
+        currentStriker: "Select New Striker", // new batsman needed
       };
 
       emitMatchState(updated, "W");
+      setTimeout(() => {
+        addBallOutcome("W", overCompleted);
+      }, 0);
+
       return updated;
     });
 
-    setRecentBalls((prev) => ["W", ...prev.slice(0, 5)]);
     showToast("error", "Wicket!", `Wicket #${matchState.wickets + 1} fallen.`);
   };
 
@@ -260,10 +324,13 @@ export default function Scorer() {
         runs: prev.runs + 1,
       };
       emitMatchState(updated, type);
+      // Extras don't count as a legal ball, so we don't increment balls or overs.
+      // Also, we don't reset recent balls.
+      setTimeout(() => {
+        setRecentBalls((prevBalls) => [type, ...prevBalls.slice(0, 5)]);
+      }, 0);
       return updated;
     });
-
-    setRecentBalls((prev) => [type, ...prev.slice(0, 5)]);
   };
 
   const selectPlayer = (playerName: string) => {
@@ -313,13 +380,15 @@ export default function Scorer() {
 
         {/* Live Status Indicator */}
         <View
-          className={`flex-row items-center px-3 py-1 rounded-full border ${isConnected ? "bg-emerald-50 border-emerald-200" : "bg-rose-50 border-rose-200"
-            }`}
+          className={`flex-row items-center px-3 py-1 rounded-full border ${
+            isConnected ? "bg-emerald-50 border-emerald-200" : "bg-rose-50 border-rose-200"
+          }`}
         >
           {isConnected ? <Wifi size={12} color="#059669" /> : <WifiOff size={12} color="#e11d48" />}
           <Text
-            className={`text-[10px] font-bold ml-1.5 uppercase ${isConnected ? "text-emerald-700" : "text-rose-700"
-              }`}
+            className={`text-[10px] font-bold ml-1.5 uppercase ${
+              isConnected ? "text-emerald-700" : "text-rose-700"
+            }`}
           >
             {isConnected ? "Live" : "Offline"}
           </Text>
@@ -380,16 +449,18 @@ export default function Scorer() {
                   return (
                     <View
                       key={idx}
-                      className={`w-7 h-7 rounded-lg items-center justify-center border ${isWicket
-                        ? "bg-rose-500 border-rose-600"
-                        : isBoundary
+                      className={`w-7 h-7 rounded-lg items-center justify-center border ${
+                        isWicket
+                          ? "bg-rose-500 border-rose-600"
+                          : isBoundary
                           ? "bg-amber-500 border-amber-600"
                           : "bg-slate-800 border-slate-700"
-                        }`}
+                      }`}
                     >
                       <Text
-                        className={`text-xs font-black ${isWicket || isBoundary ? "text-white" : "text-slate-200"
-                          }`}
+                        className={`text-xs font-black ${
+                          isWicket || isBoundary ? "text-white" : "text-slate-200"
+                        }`}
                       >
                         {ball}
                       </Text>
@@ -495,14 +566,16 @@ export default function Scorer() {
                 key={run}
                 activeOpacity={0.7}
                 onPress={() => handleAddRun(run)}
-                className={`flex-1 min-w-[28%] h-14 rounded-2xl items-center justify-center border shadow-xs ${run === 4 || run === 6
-                  ? "bg-amber-500 border-amber-600 active:bg-amber-600"
-                  : "bg-white border-slate-200 active:bg-slate-100"
-                  }`}
+                className={`flex-1 min-w-[28%] h-14 rounded-2xl items-center justify-center border shadow-xs ${
+                  run === 4 || run === 6
+                    ? "bg-amber-500 border-amber-600 active:bg-amber-600"
+                    : "bg-white border-slate-200 active:bg-slate-100"
+                }`}
               >
                 <Text
-                  className={`text-xl font-black ${run === 4 || run === 6 ? "text-white" : "text-slate-900"
-                    }`}
+                  className={`text-xl font-black ${
+                    run === 4 || run === 6 ? "text-white" : "text-slate-900"
+                  }`}
                 >
                   +{run}
                 </Text>
@@ -559,36 +632,27 @@ export default function Scorer() {
               </TouchableOpacity>
             </View>
 
-            {loadingPlayers ? (
-              <View className="py-10 items-center">
-                <ActivityIndicator color="#d97706" />
-                <Text className="text-slate-400 text-xs mt-2 font-medium">
-                  Loading roster...
-                </Text>
-              </View>
-            ) : (
-              <FlatList
-                data={playersList}
-                keyExtractor={(item) => item.id}
-                contentContainerStyle={{ paddingTop: 10, paddingBottom: 20 }}
-                renderItem={({ item }) => (
-                  <TouchableOpacity
-                    activeOpacity={0.7}
-                    onPress={() => selectPlayer(item.name)}
-                    className="p-3.5 border-b border-slate-100 flex-row items-center justify-between active:bg-amber-50 rounded-xl"
-                  >
-                    <Text className="text-slate-900 font-bold text-sm">
-                      {item.name}
+            <FlatList
+              data={getPlayerListForModal()}
+              keyExtractor={(item) => item.id}
+              contentContainerStyle={{ paddingTop: 10, paddingBottom: 20 }}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  activeOpacity={0.7}
+                  onPress={() => selectPlayer(item.name)}
+                  className="p-3.5 border-b border-slate-100 flex-row items-center justify-between active:bg-amber-50 rounded-xl"
+                >
+                  <Text className="text-slate-900 font-bold text-sm">
+                    {item.name}
+                  </Text>
+                  {item.role && (
+                    <Text className="text-slate-400 text-xs font-medium">
+                      {item.role}
                     </Text>
-                    {item.role && (
-                      <Text className="text-slate-400 text-xs font-medium">
-                        {item.role}
-                      </Text>
-                    )}
-                  </TouchableOpacity>
-                )}
-              />
-            )}
+                  )}
+                </TouchableOpacity>
+              )}
+            />
           </View>
         </View>
       </Modal>

@@ -163,11 +163,13 @@ async function getScorerMatch(req, res) {
             });
         }
 
-        const matches = await Match.find({ assignedScorer: id });
+        const matches = await Match.find({ assignedScorer: id })
+        .populate("team1")
+        .populate("team2");
 
         return res.status(200).json({
             success: true,
-            matches,
+            matches
         });
 
     } catch (error) {
@@ -301,5 +303,6 @@ module.exports = {
     launchMatch,
     updateLiveScore,
     getMatches,
-    completeMatch
+    completeMatch,
+    getScorerMatch
 };

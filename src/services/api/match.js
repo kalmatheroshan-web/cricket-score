@@ -3,7 +3,7 @@ import { apiconnector } from "../apiconnector";
 import { methods } from "./apis";
 import { MATCHES } from "./apis";
 
-const { LAUNCH_MATCHES, CREATE_MATCH, UPDATE_MATCH, GET_MATCHES, COMPLETE_MATCH } = MATCHES;
+const { LAUNCH_MATCHES, CREATE_MATCH, GET_SCORER_MATCHES, UPDATE_MATCH, GET_MATCHES, COMPLETE_MATCH } = MATCHES;
 
 export const launchMatch = async (data) => {
     try {
@@ -70,6 +70,15 @@ export const completeMatch = async (id, data) => {
     } catch (error) {
         console.error("Error completing match:", error);
         showToast("error", "Failed to complete match");
-        throw error;
     }
 };
+
+export async function get_scrorer_match(id) {
+    try {
+        const response = await apiconnector(GET_SCORER_MATCHES, methods.post, { id });
+        return response;
+    } catch (error) {
+        console.error("Error completing match:", error);
+        showToast('error', 'Failed to fetch scorer matched');
+    }
+}

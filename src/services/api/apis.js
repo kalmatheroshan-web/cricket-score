@@ -25,6 +25,7 @@ export const MATCHES = {
     CREATE_MATCH: `${BASE_URL}/matches`,
     UPDATE_MATCH: `${BASE_URL}/matches/score`,
     GET_MATCHES: `${BASE_URL}/matches`,
+    GET_SCORER_MATCHES: `${BASE_URL}/matches/scorer-match`,
     COMPLETE_MATCH: `${BASE_URL}/matches/:id/complete`,
 };
 
